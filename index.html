@@ -2,47 +2,49 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>Python Blocks Runner — النسخة المؤكدة</title>
+<title>Python Blocks Runner مع Skulpt</title>
 
-<!-- مكتبات Blockly و Brython -->
+<!-- مكتبات Blockly -->
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/brython@3.11.1/brython.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/brython@3.11.1/brython_stdlib.js"></script>
+
+<!-- مكتبات Skulpt -->
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
 
 <style>
-  body {
+body {
     font-family: "Cairo", sans-serif;
     direction: rtl;
     background: #f5f6fa;
     margin: 0;
     text-align: center;
-  }
-  h2 {
+}
+h2 {
     background: #4b7bec;
     color: white;
     margin: 0;
     padding: 15px;
-  }
-  #main {
+}
+#main {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
     margin: 20px;
-  }
-  #blocklyDiv {
+}
+#blocklyDiv {
     height: 520px;
     width: 700px;
     border: 2px solid #ccc;
     border-radius: 10px;
     background: white;
-  }
-  #rightPanel {
+}
+#rightPanel {
     margin-right: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-  button {
+}
+button {
     background: #4b7bec;
     color: white;
     border: none;
@@ -51,9 +53,11 @@
     font-size: 16px;
     margin: 5px;
     cursor: pointer;
-  }
-  #clearBtn { background: #fc5c65; }
-  #output {
+}
+#clearBtn {
+    background: #fc5c65;
+}
+#output {
     margin-top: 10px;
     width: 400px;
     height: 220px;
@@ -65,75 +69,83 @@
     overflow-y: auto;
     white-space: pre-wrap;
     font-family: monospace;
-  }
+}
 </style>
 </head>
+<body>
 
-<body onload="brython()">
-<h2>🐍 Python Blocks Runner — النسخة المؤكدة</h2>
+<h2>🐍 Python Blocks Runner مع Skulpt</h2>
 
 <div id="main">
-  <div id="blocklyDiv"></div>
-  <div id="rightPanel">
-    <button id="runBtn">▶️ تشغيل الكود</button>
-    <button id="clearBtn">🧹 مسح الناتج</button>
-    <div id="output"></div>
-  </div>
+    <div id="blocklyDiv"></div>
+    <div id="rightPanel">
+        <button id="runBtn">▶️ تشغيل الكود</button>
+        <button id="clearBtn">🧹 مسح الناتج</button>
+        <div id="output"></div>
+    </div>
 </div>
 
-<!-- إعداد قناة إخراج داخل بايثون -->
-<script type="text/python">
-from browser import window
-
-def run_python_code(code):
-    output_el = window.document["output"]
-    import io, sys
-    buf = io.StringIO()
-    sys.stdout = buf
-    sys.stderr = buf
-    try:
-        exec(code)
-    except Exception as e:
-        print("⚠️ خطأ:", e)
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
-    window.document["output"].innerHTML += "<pre>" + buf.getvalue() + "</pre>"
-</script>
-
 <script>
-  // إعداد واجهة Blockly
-  const workspace = Blockly.inject('blocklyDiv', {
+  // إعداد Blockly
+  var workspace = Blockly.inject('blocklyDiv', {
     toolbox: `
-      <xml xmlns="https://developers.google.com/blockly/xml">
+    <xml xmlns="https://developers.google.com/blockly/xml">
         <category name="طباعة" colour="#5CA699">
           <block type="text_print"></block>
         </category>
         <category name="قيم ونصوص" colour="#5C81A6">
           <block type="math_number"></block>
           <block type="text"></block>
+          <block type="variables_get"></block>
+          <block type="variables_set"></block>
         </category>
-      </xml>
+        <category name="التحكم" colour="#A65C81">
+          <block type="controls_if"></block>
+          <block type="controls_repeat_ext">
+            <value name="TIMES"><shadow type="math_number"><field name="NUM">5</field></shadow></value>
+          </block>
+        </category>
+        <category name="الدوال" colour="#A6745C" custom="PROCEDURE"></category>
+    </xml>
     `
   });
 
-  // تشغيل الكود
-  document.getElementById('runBtn').addEventListener('click', () => {
-    const pyCode = Blockly.Python.workspaceToCode(workspace);
-    document.getElementById('output').innerHTML += "<hr><b>تشغيل:</b><br><pre>" + pyCode + "</pre>";
-    try {
-      // ننفذ الدالة المعرفة داخل بايثون مباشرة
-      __BRYTHON__.run_script(`
-from browser import window
-window.run_python_code("""${pyCode.replaceAll('"','\\"')}""")
-      `);
-    } catch (err) {
-      document.getElementById('output').innerHTML += `<span style='color:red'>⚠️ خطأ: ${err}</span><br>`;
-    }
+  // إعداد Skulpt
+  function outf(text) {
+    var outputDiv = document.getElementById("output");
+    outputDiv.innerHTML += text + "\n";
+  }
+
+  function runCode(code) {
+    document.getElementById("output").innerHTML += "<hr>";
+    Sk.configure({output:outf, read:builtinRead});
+    (Sk.TurtleGraphics || (Sk.TurtleGraphics = {})).target = 'output';
+    var myPromise = Sk.misceval.asyncToPromise(function() {
+        return Sk.importMainWithBody("<stdin>", false, code, true);
+    });
+    myPromise.then(function(mod) {
+        console.log("تم التنفيذ");
+    },
+    function(err) {
+        outf(err.toString());
+    });
+  }
+
+  function builtinRead(x) {
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+        throw "ملف غير موجود: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
+  }
+
+  // تشغيل الكود عند الضغط
+  document.getElementById("runBtn").addEventListener("click", () => {
+    var code = Blockly.Python.workspaceToCode(workspace);
+    runCode(code);
   });
 
   // مسح الإخراج
-  document.getElementById('clearBtn').addEventListener('click', () => {
-    document.getElementById('output').innerHTML = '';
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    document.getElementById("output").innerHTML = "";
   });
 </script>
 
