@@ -2,8 +2,11 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>Blockly Python Runner JS</title>
+<title>Blockly Python Runner جاهزة</title>
+
+<!-- مكتبات Blockly مضمنة -->
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+
 <style>
 body {
   font-family: "Cairo", sans-serif;
@@ -28,7 +31,7 @@ button { margin: 5px; padding: 10px 20px; border-radius: 8px; border: none; curs
 </head>
 <body>
 
-<h2>Blockly Python Runner JS — بدون مكتبات Python</h2>
+<h2>Blockly Python Runner جاهزة للعمل</h2>
 
 <div id="main">
   <div id="blocklyDiv"></div>
@@ -40,6 +43,7 @@ button { margin: 5px; padding: 10px 20px; border-radius: 8px; border: none; curs
 </div>
 
 <script>
+// إنشاء Workspace
 const workspace = Blockly.inject('blocklyDiv', {
   toolbox: `
 <xml xmlns="https://developers.google.com/blockly/xml">
@@ -62,10 +66,10 @@ const workspace = Blockly.inject('blocklyDiv', {
 `
 });
 
-// كائن لتخزين المتغيرات
+// تخزين المتغيرات
 let variables = {};
 
-// تحويل كود Python الناتج من Blockly إلى JS
+// تنفيذ كود Python المحاكى بواسطة JS
 function runPythonJS(code) {
   const output = document.getElementById("output");
   const lines = code.split("\n");
@@ -92,7 +96,6 @@ function runPythonJS(code) {
       }
       variables[varName] = value;
     } else if(line.startsWith("for ") && line.includes(" in range(")) {
-      // simple repeat loop: for i in range(N)
       const match = line.match(/for\s+(\w+)\s+in range\((\d+)\)/);
       if(match) {
         const loopVar = match[1];
